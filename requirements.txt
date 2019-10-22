@@ -1,0 +1,3 @@
+pyyaml>=5
+requests>=2.22
+PrettyTable
