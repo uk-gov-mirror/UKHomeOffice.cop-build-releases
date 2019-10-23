@@ -183,7 +183,7 @@ def buildReport(args, drone_server_url, drone_user_token, header_str):
                 
         build_list = getBuilds(drone_server_url, header_str, repo['full_name'])
         if not build_list:
-            print('No builds found for ' + repo['full_name'])
+            print('No builds found for ' + repo['full_name'] + '\n')
             continue
 
         print('**' + repo['full_name'].upper() + '**')
@@ -278,6 +278,16 @@ if __name__ == "__main__":
         if args.deploy_to is None:
             print('If you specify a deployment, please specify an environment to deploy to')
             exit(1)
+
+    print('Running with the following options:')
+    print('-----------------------------------')
+    print('Action: ' + args.action)
+ 
+    print('Deploy to: ' + str(args.deploy_to) + ' (applicable for deploy action)')
+    print('Repo: ' + str(args.repo) + ' (only applicable for report action)')
+    print('Repo store: ' + str(args.repo_store) + ' (applicable when repo is is provided, or to limit processing to a particular store)')
+    print('Report format: ' + args.report_format + ' (applicable for report action)')
+    print('Report type: ' + args.report_type + ' (applicable for report action)\n')
 
     if process_github:
         data = runAction(args, data, 'GITHUB_DRONE_SERVER', 'GITHUB_DRONE_TOKEN')

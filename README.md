@@ -66,13 +66,31 @@ optional arguments:
                         Style of report, defaults to table
 ```
 
+#### Environment variable overrides
+
+- ACTION
+- DEPLOY_TO
+- REPO
+- REPO_STORE
+- REPORT_FORMAT
+- REPORT_TYPE
+
 ### Summary report
 
 The following report will be displayed in a table or list format for all repositories, or a specific repository, depending on the options supplied. Prints the last build for each environment.
 
+#### Command line
+
 ```
 ./drone_builds.py -a report -t summary
 ./drone_builds.py -a report -r UKHomeOffice/RefData -s github -t summary -f list
+```
+
+#### Drone deployment
+
+```
+drone deploy cop/manifest 5 dev
+drone deploy -p REPO=UKHomeOffice/RefData -p REPO_STORE=github -p REPORT_FORMAT=list cop/manifest 5 dev
 ```
 
 UKHOMEOFFICE/REFDATA
@@ -88,9 +106,18 @@ PRODUCTION|749|2019-10-16 16:53:43|success|https://github.com/UKHomeOffice/RefDa
 
 The following report will be displayed in a table or list format for all repositories, or a specific repository, depending on the options supplied. Prints all the builds for each environment.
 
+#### Command line
+
 ```
 ./drone_builds.py -a report -t detailed
 ./drone_builds.py -a report -r UKHomeOffice/RefData -s github -t detailed -f list
+```
+
+#### Drone deployment
+
+```
+drone deploy -p REPORT_TYPE=detailed cop/manifest 5 dev
+drone deploy -p REPO=UKHomeOffice/RefData -p REPO_STORE=github -p REPORT_TYPE=detailed -p REPORT_FORMAT=list cop/manifest 5 dev
 ```
 
 UKHOMEOFFICE/REFDATA
@@ -129,9 +156,17 @@ This step is run from the Gitlab `manifest` repository `.drone.yml`.
 
 When we release to staging the local.yml file needs to be updated so that local dev builds are correct according to what is in production. This was a manual task and has been automated here. In order to determine which repository store, drone CI server and repository is used for each microservice, 2 new attributes have been added to the microservices' config: `gitlab` and `drone_repo`. The script traverses the yaml file twice, first with github drone server url and token, and then gitlab and its respective values, querying drone for the repository's builds and updating the tag to the latest master commit id. The updated yaml is then printed out and currently needs to be checked in manually.
 
+#### Command line
+
 ```
 ./drone_builds.py -a populate
 ./drone_builds.py -a populate -s github
+```
+
+#### Drone deployment
+
+```
+drone deploy -p ACTION=populate -p REPO_STORE=github cop/manifest 5 dev
 ```
 
 ### Deploy
@@ -142,8 +177,16 @@ This is currently only printing out drone command line commands, it does not act
 
 The script traverses the yaml file twice, printing out the drone commands for deploying to staging or production using the `tag` value found for each microservice.
 
+#### Command line
+
 ```
 ./drone_builds.py -a deploy -d staging
+```
+
+#### Drone deployment
+
+```
+drone deploy -p ACTION=deploy -p DEPLOY_TO=staging cop/manifest 5 dev
 ```
 
 ## Finish
@@ -152,4 +195,3 @@ Deactivate the virtualenv
 ```
 deactivate
 ```
-
