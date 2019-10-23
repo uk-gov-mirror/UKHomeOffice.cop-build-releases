@@ -6,7 +6,6 @@ import json
 import os
 import requests
 import yaml
-from common import *
 from prettytable import PrettyTable
 from prettytable import PLAIN_COLUMNS
 
@@ -86,6 +85,7 @@ def getDroneTokenString(drone_user_token):
 def print_repos_build_info(repo, build_list, report_format):
     if build_list:
         t = PrettyTable(['Environment', 'Build', 'Date', 'Status', 'Commit'])
+        t.align = 'l'
         if report_format == 'list':
             t.set_style (PLAIN_COLUMNS)
         for build in build_list:
@@ -100,6 +100,7 @@ def print_repos_build_info(repo, build_list, report_format):
 def print_repo_build_info(build_env, build_list, report_format):
     if build_list:
         t = PrettyTable(['Build', 'Date', 'Status', 'Commit', 'Author'])
+        t.align = 'l'
         if report_format == 'list':
             t.set_style (PLAIN_COLUMNS)
         print('**' + build_env.upper() + '**')
