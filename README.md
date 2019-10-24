@@ -158,10 +158,15 @@ When we release to staging the local.yml file needs to be updated so that local 
 
 #### Command line
 
+Copy the manifest repository local.yml to the python script directory
+
 ```
-./drone_builds.py -a populate
-./drone_builds.py -a populate -s github
+cp <path-to-manifest-repo>/local.yml .
+./drone_builds.py -a populate > local.yml.new
+./drone_builds.py -a populate -s github > local.yml.new
 ```
+
+Copy the local.yml.new file back to the manifest repo local.yml and commit if you plan to release these changes to staging.
 
 #### Drone deployment
 
@@ -175,11 +180,14 @@ This step is run from the Gitlab `manifest` repository `.drone.yml`.
 
 This is currently only printing out drone command line commands, it does not actually deploy any builds.
 
-The script traverses the yaml file twice, printing out the drone commands for deploying to staging or production using the `tag` value found for each microservice.
+The script traverses the yaml file twice, printing out the drone commands for deploying to staging or production using the `tag` value found for each microservice. Execute the drone commands to deploy staging and production.
 
 #### Command line
 
+Copy the manifest repository local.yml to the python script directory.
+
 ```
+cp <path-to-manifest-repo>/local.yml .
 ./drone_builds.py -a deploy -d staging
 ```
 
