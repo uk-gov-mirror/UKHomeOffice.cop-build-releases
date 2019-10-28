@@ -22,7 +22,16 @@ pipeline:
       - docker build -t cop-build-releases:$${DRONE_COMMIT_SHA} .
     when:
       event: push
-      branch: master
+
+  vulnerability-scan:
+    image: quay.io/ukhomeofficedigital/anchore-submission:latest
+    dockerfile: Dockerfile
+    image_name: cop-build-releases:${DRONE_COMMIT_SHA}
+    local_image: true
+    tolerate: low
+    fail_on_detection: false
+    when:
+      event: push
 
   image_to_quay:
     image: quay.io/ukhomeofficedigital/drone-docker
