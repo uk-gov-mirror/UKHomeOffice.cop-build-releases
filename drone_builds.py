@@ -4,6 +4,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import requests
 import yaml
 from prettytable import PrettyTable
@@ -13,7 +14,7 @@ from prettytable import PLAIN_COLUMNS
 def getDroneBuildsParser():
     parser = argparse.ArgumentParser(description='Drone builds')
 
-    parser.add_argument('-a', '--action', dest='action', default='report', choices=['deploy', 'report', 'populate'], help='Options are report (builds per repo, summary or detailed), populate (For releases to staging/production), and deploy, defaults to report')
+    parser.add_argument('-a', '--action', dest='action', default='report', choices=['deploy', 'release', 'report', 'populate'], help='Options are deploy, release (commit sha and build number output), report (builds per repo, summary or detailed), and populate (For releases to staging/production), defaults to report')
     parser.add_argument('-d', '--deploy-to', dest='deploy_to', choices=['production', 'staging'], help='Environment to deploy to')
     parser.add_argument('-r', '--repo', dest='repo', help='Drone repository name')
     parser.add_argument('-s', '--store', dest='repo_store', choices=['github', 'gitlab'], help='Github / Gitlab repository store')
@@ -86,15 +87,28 @@ def print_repos_build_info(repo, build_list, report_format):
     if build_list:
         t = PrettyTable(['Environment', 'Build', 'Date', 'Status', 'Commit'])
         t.align = 'l'
+        print_repos_build_info.align = 'l'
+
         if report_format == 'list':
             t.set_style (PLAIN_COLUMNS)
+
         for build in build_list:
             json_str = json.loads(build)
             deploy_env = 'DEV' if json_str['deploy_to'] == '' else json_str['deploy_to'].upper()
             commit_str = json_str['commit'] if json_str['link_url'] == '' else json_str['link_url']
-            t.add_row([deploy_env, json_str['number'], datetime.datetime.fromtimestamp(json_str['started_at']), json_str['status'], commit_str])
+            formatted_commit = commit_str.split("/")
 
-        print(t)
+            if report_format == 'release':
+                repo_name = re.sub('UKHomeOffice/', '', repo)
+                formatted_repo = re.sub('cop/', '', repo_name)
+                print('|' + formatted_repo + '|' + formatted_commit[len(formatted_commit) - 1] + '|' + str(json_str['number']) + '|')
+                #print('drone deploy ' + repo + ' ' + str(json_str['number']) + ' staging')
+                #print('drone deploy ' + repo + ' ' + str(json_str['number']) + ' production')
+            else:
+                t.add_row([deploy_env, json_str['number'], datetime.datetime.fromtimestamp(json_str['started_at']), json_str['status'], commit_str])
+
+        if report_format != 'release':
+            print(t)
 
 
 def print_repo_build_info(build_env, build_list, report_format):
@@ -103,7 +117,9 @@ def print_repo_build_info(build_env, build_list, report_format):
         t.align = 'l'
         if report_format == 'list':
             t.set_style (PLAIN_COLUMNS)
+
         print('**' + build_env.upper() + '**')
+
         for build in build_list:
             json_str = json.loads(build)
             commit_str = json_str['commit'] if json_str['link_url'] == '' else json_str['link_url']
@@ -186,7 +202,8 @@ def buildReport(args, drone_server_url, drone_user_token, header_str):
             print('No builds found for ' + repo['full_name'] + '\n')
             continue
 
-        print('**' + repo['full_name'].upper() + '**')
+        if (args.action == 'report'):
+            print('**' + repo['full_name'].upper() + '**')
 
         for build in build_list:
             if (build['deploy_to'] == 'production'):
@@ -199,28 +216,32 @@ def buildReport(args, drone_server_url, drone_user_token, header_str):
                 if (build['branch'] == 'master' and (build['event'] == 'push' or build['event'] == 'deployment')):
                     dev_builds.append(json.dumps(build))
 
-        if args.report_type == 'detailed':
+        if (args.report_type == 'detailed') and (args.action != 'release'):
             print_repo_build_info('dev', dev_builds, args.report_format)
             print_repo_build_info('secrets', secrets_builds, args.report_format)
             print_repo_build_info('staging', staging_builds, args.report_format)
             print_repo_build_info('production', prod_builds, args.report_format)
-        elif args.report_type == 'summary':
+        elif (args.report_type == 'summary') or (args.action == 'release'):
             repo_builds = []
             if dev_builds:
                 repo_builds.append(dev_builds[0])
 
-            if secrets_builds:
-                repo_builds.append(secrets_builds[0])
+            if args.action == 'release':
+                print_repos_build_info(repo['full_name'], repo_builds, 'release')
+            else:
+                if secrets_builds:
+                    repo_builds.append(secrets_builds[0])
 
-            if staging_builds:
-                repo_builds.append(staging_builds[0])
+                if staging_builds:
+                    repo_builds.append(staging_builds[0])
 
-            if prod_builds:
-                repo_builds.append(prod_builds[0])
+                if prod_builds:
+                    repo_builds.append(prod_builds[0])
 
-            print_repos_build_info(repo['full_name'], repo_builds, args.report_format)
+                print_repos_build_info(repo['full_name'], repo_builds, args.report_format)
 
-        print('\n')
+        if args.action != 'release':
+            print('\n')
 
 
 def process_local(data, yaml_file, drone_server_url, header_str, action, deploy_to):
@@ -250,7 +271,7 @@ def runAction(args, data, env_server_name, env_token_name):
     header_str = getDroneTokenString(drone_user_token)
     local_filename = 'local.yml'
 
-    if args.action == 'report':
+    if (args.action == 'report') or (args.action == 'release'):
         buildReport(args, drone_server_url, drone_user_token, header_str)
     elif args.action == 'populate' or args.action == 'deploy':
         return process_local(data, local_filename, drone_server_url, header_str, args.action, args.deploy_to)
