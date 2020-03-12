@@ -44,14 +44,14 @@ pip install -r requirements.txt
 ### Usage
 
 ```
-drone_builds.py [-h] [-a {deploy,report,populate}]
+drone_builds.py [-h] [-a {deploy,release,report,populate}]
                        [-d {production,staging}] [-r REPO]
                        [-s {github,gitlab}] [-t {detailed,summary}]
                        [-f {list,table}]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a {deploy,report,populate}, --action {deploy,report,populate}
+  -a {deploy,release,report,populate}, --action {deploy,release,report,populate}
                         Options are report (builds per repo, summary or
                         detailed), populate (For releases to
                         staging/production), and deploy, defaults to report
@@ -74,6 +74,30 @@ optional arguments:
 - REPO_STORE
 - REPORT_FORMAT
 - REPORT_TYPE
+
+### Release
+
+The following output will be displayed for all repositories, or a specific repository, depending on the options supplied. Last master build for each repository and the drone command. The intention is to use this output as wiki markup in confluence for the versions table.
+
+#### Command line
+
+```
+./drone_builds.py -a release > output.txt
+./drone_builds.py -a release -r UKHomeOffice/RefData -s github
+```
+
+#### Drone deployment
+
+```
+drone deploy cop/manifest 5 dev
+drone deploy -p REPO=UKHomeOffice/RefData -p REPO_STORE=github -a REPORT_FORMAT=list cop/manifest 5 dev
+```
+
+|cop-build-releases|e6b6a8574680d8e75748ee3ae59c1ccf67823350|29|
+|cop-cypress|185517e67363f329127041acc50fcc53ba6e953b|82|
+|cop-data-api|b6f0b7b6b5db021f581b08f777056d0356e7d7d0|437|
+|cop-data-api-spec|dddbb2a1fdbf4b16250c1b21c895349266faf61d|44|
+|cop-file-upload-service|b42797f7eddbba306b29f01e295457f69a814f7f|180|
 
 ### Summary report
 
@@ -196,6 +220,14 @@ cp <path-to-manifest-repo>/local.yml .
 ```
 drone deploy -p ACTION=deploy -p DEPLOY_TO=staging cop/manifest 5 dev
 ```
+
+drone deploy UKHomeOffice/cop-private-workflow-engine 789 staging
+drone deploy UKHomeOffice/cop-private-workflow-tasklist 1471 staging
+drone deploy UKHomeOffice/ref-data-service 162 staging
+drone deploy UKHomeOffice/RefData 1193 staging
+drone deploy UKHomeOffice/cop-data-api 436 staging
+drone deploy UKHomeOffice/ref-data-api 185 staging
+...
 
 ## Finish
 
